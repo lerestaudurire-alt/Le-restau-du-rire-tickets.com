@@ -1,0 +1,48 @@
+LE RESTAU DU RIRE - BILLETTERIE - PACK COMPLET
+
+CONTENU
+  site/       -> les fichiers a mettre en ligne (racine de votre hebergement)
+  supabase/   -> la base de donnees (SQL) et la fonction de paiement
+
+ETAPE 1 - BASE DE DONNEES (Supabase > SQL Editor)
+  Executez dans cet ordre (chaque fichier peut etre relance sans risque) :
+    supabase/sql/00-validation-et-admin.sql   validation des evenements + acces administrateur (EN PREMIER)
+    supabase/sql/01-database.sql          chiffrement AES-256, fonctions admin/organisateur
+    supabase/sql/02-simplypaye.sql        colonnes de paiement et reservations "payer plus tard"
+    supabase/sql/03-database-policies.sql droits d'acces (inscription, evenements, preuves)
+    supabase/sql/04-admin-fix.sql         comptes administrateurs (deja fait ? inutile de le refaire)
+
+ETAPE 2 - PAIEMENT AUTOMATIQUE SIMPLYPAYE
+  Supabase > Edge Functions > Secrets, ajoutez :
+    SIMPLYPAYE_MERCHANT_CODE   votre code marchand
+    SIMPLYPAYE_API_KEY         votre cle API (jamais dans index.html)
+    SITE_URL                   adresse de votre site, sans "/" final
+    MAIN_OPEN                  1 quand la billetterie de l'Edition 1.5 ouvre
+    HOLD_HOURS                 (optionnel) duree de garde, 48 par defaut
+    SIMPLYPAYE_CALLBACK        (optionnel) 1 pour la confirmation automatique par rappel
+  Puis deployez : supabase functions deploy simplypaye --no-verify-jwt
+  (ou creez une fonction nommee "simplypaye" dans le tableau de bord et collez
+   supabase/functions/simplypaye/index.ts)
+
+ETAPE 3 - SITE
+  Envoyez le contenu du dossier site/ a la racine de votre hebergement.
+  Images des billets : dossier site/billets/ (voir billets/LISEZ-MOI.txt).
+  Rechargez le site deux fois pour que le navigateur prenne la nouvelle version.
+
+OUVRIR LA BILLETTERIE DE L'EDITION 1.5
+  Dans site/index.html, bloc EDITION : mettez ouvert:true, ET MAIN_OPEN=1 dans les secrets.
+
+SECURITE
+  Les numeros, e-mails et noms de payeur sont chiffres en AES-256 dans la base.
+  Ne partagez jamais vos mots de passe ni la cle API SimplyPaye.
+
+
+=== MISES A JOUR RECENTES ===
+1. Creation d'evenement : colonnes tickets / pay_numbers / modes converties en jsonb
+   (corrige "Creation impossible (400) : expected JSON array"). Voir supabase/sql/05-...
+2. Paiement en ligne : option "Carte bancaire (Visa / Mastercard)" plus visible.
+   La carte doit aussi etre activee sur votre compte SimplyPaye.
+3. Festivals : plusieurs dates choisies une par une (ex : 5, 6, 7, 8, 9) - colonne events.dates (jsonb).
+BASE DEJA INSTALLEE (votre cas) : executez supabase/sql/MISE-A-JOUR-SEULEMENT.sql dans Supabase > SQL Editor (relancable sans risque).
+NOUVELLE BASE : supabase/sql/SQL-COMPLET-A-JOUR.sql (long : l'executer par parties, de preference depuis un ordinateur).
+4. Colonnes obligatoires heritees (ex. "cat") rendues facultatives (corrige "null value in column cat").
